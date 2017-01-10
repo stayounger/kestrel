@@ -1,5 +1,7 @@
 package com.tecule.kestrel.service;
 
+import java.util.Date;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -19,15 +21,16 @@ public class CustomerServiceImpl implements CustomerService {
 	CustomerRepository customerRepository;
 
 	@Override
-	public Customer create(String firstName, String lastName) {
+	public long addCustomer(String firstName, String lastName, Date birthday) {
 		if (null == customerRepository) {
 			System.out.println("customerRepository is null");
-			return null;
+			return -1;
 		}
 
 		Customer customer = new Customer();
 		customer.setFirstName(firstName);
 		customer.setLastName(lastName);
-		return customerRepository.save(customer);
+		customer.setBirthday(birthday);
+		return customerRepository.persist(customer);
 	}
 }

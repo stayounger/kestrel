@@ -26,8 +26,19 @@ public class CustomerRepositoryImpl implements CustomerRepository {
 	// use spring transactional annotation
 	@Override
 	@Transactional
-	public Customer save(Customer customer) {
+	public long persist(Customer customer) {
 		entityManager.persist(customer);
-		return customer;
+		return customer.getId();
+	}
+
+	@Override
+	public Customer find(long id) {
+		return entityManager.find(Customer.class, id);
+	}
+
+	@Override
+	@Transactional
+	public Customer merge(Customer customer) {
+		return entityManager.merge(customer);		
 	}
 }

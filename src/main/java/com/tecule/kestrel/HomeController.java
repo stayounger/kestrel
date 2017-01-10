@@ -46,7 +46,7 @@ public class HomeController {
 	@ResponseBody
 	public String test() {		
 		try {
-			customerService.create("b", "2");
+			customerService.addCustomer("b", "2", new Date());
 			return "finish";
 		} catch (Exception e) {
 			e.printStackTrace();
