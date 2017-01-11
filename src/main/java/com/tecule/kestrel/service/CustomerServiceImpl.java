@@ -2,7 +2,10 @@ package com.tecule.kestrel.service;
 
 import java.util.Date;
 
+import javax.persistence.OptimisticLockException;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.hibernate3.HibernateOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 
 import com.tecule.kestrel.model.Customer;
@@ -32,5 +35,53 @@ public class CustomerServiceImpl implements CustomerService {
 		customer.setLastName(lastName);
 		customer.setBirthday(birthday);
 		return customerRepository.persist(customer);
+	}
+
+	@Override
+	public void lastCommitWinsMerge(Customer customer) throws InterruptedException {
+		try {
+			Customer nc = customerRepository.merge(customer);
+			System.out.println(nc.getVersion());
+		} catch (OptimisticLockException e) {
+			retryMerge(customer);
+		} catch (HibernateOptimisticLockingFailureException e) {
+			retryMerge(customer);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void retryMerge(Customer customer) throws InterruptedException {
+		int sleepMilliseconds = 100, sleepIndex = 1, sleepCount = 30;
+
+		for (; sleepIndex < sleepCount; sleepIndex++) {
+			try {
+				Customer updatedCustomer = customerRepository.find(customer.getId());
+				customer.setVersion(updatedCustomer.getVersion());
+				customerRepository.merge(customer);
+
+				System.out.println("^_^ thread #" + Thread.currentThread().getId() + ": retry successfully in "
+						+ sleepIndex + " time(s)");
+				break;
+			} catch (OptimisticLockException e) {
+				try {
+					Thread.sleep(sleepMilliseconds);
+				} catch (InterruptedException e1) {
+					throw e1;
+				}
+			} catch (HibernateOptimisticLockingFailureException e) {
+				try {
+					Thread.sleep(sleepMilliseconds);
+				} catch (InterruptedException e1) {
+					throw e1;
+				}
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		if (sleepIndex == sleepCount) {
+			System.out.println(":-( thread #" + Thread.currentThread().getId() + ": no more retry tickets");
+		}
 	}
 }
